@@ -1,5 +1,9 @@
 #pragma once
+#ifndef main
+#define main
 
+# include <iostream>
+using namespace std;
 
 template<class T> //abstract type       
 class Route
@@ -51,3 +55,5 @@ int search_passenger(T passengers, T passenger) {
 int search_passenger_id(T arr, T length, T passenger) {
 
 }
+
+#endif
