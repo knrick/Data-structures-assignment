@@ -61,7 +61,31 @@ class RouteList
         }
 
         void add_station(RouteList *route_data, bool move_right) {
+            cout << "Insert to beginning = " << endl;
+            cout << "Enter station name, previous station name & next station name = " << name1 << prev_name1 << next_name1 << endl;
+            cout<< "Enter the "
+            Route* newNode = new Route;
+            newNode->name = name1;
+            newNode->prev_name = prev_name1;
+            newNode->next_name = next_name1;
 
+            newNode->next = head;
+            newNode->prev = NULL;
+            head = newNode;
+
+            /*if (head != nullptr) {
+                DoublyNode<T>* tail = head;
+                head = newDNode;
+                newDNode->next = tail;
+            }*/
+            if (tail == NULL) {
+                tail = newDNode;
+            }
+            else {
+                newDNode->next->prev = newDNode;
+            }
+
+            size++;
         }
 
         void edit_station(RouteList *route, RouteList *route_data, bool move_right) {
