@@ -40,7 +40,6 @@ namespace DSTR {
     class Transaction {
         public:
             int id;
-            int ticket_id;
             std::string source_station;
             std::string target_station;
             float price;
@@ -58,13 +57,17 @@ namespace DSTR {
         public:
             TransactionQueue();
 
-            void push(Transaction transaction);
+            void push(Transaction *transaction);
+
+            Transaction* pop();
 
             void add_transaction(Transaction transaction);
 
-            void edit_transaction(int transaction_id, Transaction new_transaction);
+            void edit_transaction(int transaction_id, Transaction *new_transaction);
 
             void delete_transaction(int transaction_id);
+            
+            int get_size();
     };
 
     class Passenger {
@@ -81,6 +84,10 @@ namespace DSTR {
             int search_passenger_id(int length, Passenger passenger);
 
             void add_passenger(Passenger passenger);
+
+            Passenger *get(int i);
+
+            int get_size();
 
     };
 }
