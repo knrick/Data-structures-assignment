@@ -1,6 +1,8 @@
 
 #include <iostream>
 #include <string>
+#include <iomanip>
+#include <ctime>
 using namespace std;
 
 #define get_max_val(x,y) x >= y ? x : y
@@ -34,6 +36,8 @@ class RouteList
             this->next_price = next_price;
             this->prev_time = prev_time;
             this->next_time = next_time;
+            this->prev = NULL;
+            this->next = NULL;
         }
         
         RouteList* search_route(string name, bool move_right) {
@@ -52,52 +56,106 @@ class RouteList
 
         }
 
-        bool iterate_ll(RouteList *linked_list, bool move_right) {
-            if (move_right && linked_list->next != NULL)
+        int search_route_position(string name) {
+            int i = 0;
+            RouteList* node = this;
+            while (node != NULL) {
+                if (node->name == name) {
+                    return i;
+                }
+                node = node->next;
+                i++;
+
+            }
+            return -1;
+
+        }
+
+        bool iterate_ll(bool move_right) {
+            if (move_right && this->next != NULL)
                 return true;
-            if (!move_right && linked_list->prev != NULL)
+            if (!move_right && this->prev != NULL)
                 return true;
             return false;
         }
 
-        void add_station(RouteList *route_data, bool move_right) {
-            cout << "Insert to beginning = " << endl;
-            cout << "Enter station name, previous station name & next station name = " << name1 << prev_name1 << next_name1 << endl;
-            cout<< "Enter the "
-            Route* newNode = new Route;
-            newNode->name = name1;
-            newNode->prev_name = prev_name1;
-            newNode->next_name = next_name1;
-
-            newNode->next = head;
-            newNode->prev = NULL;
-            head = newNode;
-
-            /*if (head != nullptr) {
-                DoublyNode<T>* tail = head;
-                head = newDNode;
-                newDNode->next = tail;
-            }*/
-            if (tail == NULL) {
-                tail = newDNode;
+        void reassign_metrics() {
+            if (this->next != NULL) {
+                this->next->prev_distance = this->next_distance;
+                this->next->prev_time = this->next_time;
+                this->next->prev_price = this->next_price;
             }
-            else {
-                newDNode->next->prev = newDNode;
+            if (this->prev != NULL){
+                this->prev->next_distance = this->prev_distance;
+                this->prev->next_time = this->prev_time;
+                this->prev->next_price = this->prev_price;
             }
-
-            size++;
         }
 
-        void edit_station(RouteList *route, RouteList *route_data, bool move_right) {
-
+        bool add_station(RouteList *station, bool move_right) {
+            RouteList *node = this;
+            if (node->name == station->name) {
+                if (move_right) {
+                    station->next = node->next;
+                    station->next->prev = station;
+                }
+                else {
+                    station->prev = node->prev;
+                    station->prev->next = station;
+                }
+                return true;
+            }
+            while (node->iterate_ll(move_right)) {
+                node = move_right ? node->next : node->prev;
+                if (node->name == station->name) {
+                    if (move_right) {
+                        station->next = node->next;
+                        station->prev = node;
+                    } else {
+                        station->prev = node->prev;
+                        station->next = node;
+                    }
+                    station->next->prev = station;
+                    station->prev->next = station;
+                    return true;
+                }
+            }
+            if (move_right) {
+                station->prev = node;
+                station->prev->next = station;
+            } else {
+                station->next = node;
+                station->next->prev = station;
+            }
+            return false;
         }
 
-        void delete_station(RouteList *route, bool move_right) {
-
-        }
-
-        float* calculate_path(string start_station_name, string end_station_name, bool move_right) {
-
+        float* calculate_path(string start_station_name, string end_station_name) {
+            RouteList *station = this->search_route(start_station_name, true);
+            bool move_right = this->search_route_position(start_station_name) < this->search_route_position(end_station_name);
+            float total_distance = 0.0;
+            float total_time = 0.0;
+            float total_price = 0.0;
+            while (station != NULL && station->name != end_station_name) {
+                if (move_right) {
+                    total_distance += station->next_distance;
+                    total_time += station->next_time;
+                    total_price += station->next_price;
+                    station = station->next;
+                } else {
+                    total_distance += station->prev_distance;
+                    total_time += station->prev_time;
+                    total_price += station->prev_price;
+                    station = station->prev;
+                }
+            }
+            if (station == NULL)
+                return NULL;
+            float *output = new float[3];
+            output[0] = total_distance;
+            output[1] = total_time;
+            output[2] = total_price;
+            return output;
         }
 
 };
@@ -108,17 +166,22 @@ class Transaction {
         string source_station;
         string target_station;
         float price;
-        time_t purchase_date_time;
-        time_t departure_date_time;
+        string purchase_date_time;
+        string departure_date_time;
         string passenger_name;
+        Transaction *next;
+
+        Transaction() {
+
+        }
     
         Transaction(
             int id,
             string source_station,
             string target_station,
             float price,
-            time_t purchase_date_time,
-            time_t departure_date_time,
+            string purchase_date_time,
+            string departure_date_time,
             string passenger_name
         ) {
             this->id = id;
@@ -128,6 +191,7 @@ class Transaction {
             this->purchase_date_time = purchase_date_time;
             this->departure_date_time = departure_date_time;
             this->passenger_name = passenger_name;
+            this->next = NULL;
         }
 
 };
@@ -135,83 +199,163 @@ class Transaction {
 class TransactionQueue {
     private:
         Transaction *transactions;
-    public:
-        TransactionQueue(Transaction *transactions) {
-            this->transactions = transactions;
-        }
-
+        int size;
+        
         void push(Transaction *transaction) {
-
+            Transaction *transactions = this->transactions;
+            if (transactions == NULL)
+                this->transactions = transaction;
+            else{
+                while (transactions->next != NULL){
+                    transactions = transactions->next;
+                }
+                transactions->next = transaction;
+            }
+            this->size++;
+        }
+    public:
+        TransactionQueue() {
+            transactions = NULL;
+            size = 0;
         }
 
         Transaction *pop() {
-
-        }
-
-        void add_transaction(Transaction transaction) {
-
-        }
-
-        void edit_transaction(int transaction_id, Transaction *new_transaction) {
-
-        }
-
-        void delete_transaction(int transaction_id) {
-
+            Transaction * transaction = this->transactions;
+            this->transactions = transactions->next;
+            transaction->next = NULL;
+            this->size --;
+            return transaction;
         }
 
         int get_size() {
+            return this->size;
+        }
 
+        int get_next_id() {
+            int id = -1;
+            Transaction *transaction;
+            for (int i = this->get_size(); i > 0; i--) {
+                transaction = this->pop();
+                id = get_max_val(id, transaction->id);
+                this->push(transaction);
+            }
+            return id+1;
+        }
+
+        void add_transaction(Transaction *transaction) {
+            this->push(transaction);
+        }
+
+        bool edit_transaction(Transaction *new_transaction) {
+            Transaction *transaction;
+            bool found = false;
+            for (int i = this->get_size(); i > 0; i--) {
+                transaction = this->pop();
+                if (transaction->id == new_transaction->id) {
+                    found = true;
+                    transaction = new_transaction;
+                }
+                this->push(transaction);
+            }
+            return found;
+        }
+
+        bool delete_transaction(int transaction_id) {
+            bool found = false;
+            for (int i = this->get_size(); i > 0; i--) {
+                Transaction *transaction;
+                transaction = this->pop();
+                if (transaction->id == transaction_id) {
+                    found = true;
+                } else {
+                    this->push(transaction);
+                }
+            }
+            return found;
         }
 };
 
 class Passenger {
     public:
-        int id;
         string name;
         string ic;
         TransactionQueue* transactions;
 
-        Passenger(
-            int id,
-            string name,
-            string ic,
-            TransactionQueue* transactions
-        ) {
-            this->id = id;
+        Passenger() {
+
+        }
+
+        Passenger(string name, string ic, TransactionQueue* transactions) {
             this->name = name;
             this->ic = ic;
             this->transactions = transactions;
+        }
+};
+
+class PassengerArray {
+    public:
+        int size;
+        Passenger *passengers;
+
+        PassengerArray() {
+            this->size = 0;
+        }
+
+        Passenger *get(int i) {
+            if (i >= 0 && i < size)
+                return &(this->passengers[i]);
+            return NULL;
+        }
+
+        int get_size() {
+            return size;
         }
 
         Passenger *search_passenger(string passenger_name) {
             return this->get(this->search_passenger_id(this->get_size(), passenger_name));
         }
 
-        int search_passenger_id(size_t length, std::string passenger_name) {
+        int search_passenger_id(int pos, int length, std::string passenger_name) {
             if (length == 0) {
-                return NULL;
+                return -1;
             }
             int mid = length/2;
-            if (passenger_name == this[mid].name) {
+            if (passenger_name == this->get(mid)->name) {
                 return mid;
             }
-            if (passenger_name < this[mid].name) {
-                return this->search_passenger_id(mid, passenger_name);
+            if (passenger_name < this->get(mid)->name) {
+                return this->search_passenger_id(0, mid, passenger_name);
             }
-            return this[mid].search_passenger_id(mid, passenger_name);
+            return this[mid].search_passenger_id(mid, mid, passenger_name);
         }
 
-        void add_passenger(Passenger passenger) {
-
+        int search_passenger_id(int length, std::string passenger_name) {
+            return search_passenger_id(0, length, passenger_name);
         }
 
-        Passenger *get(int i) {
+        void add_passenger(Passenger *passenger) {
+            bool swap = false;
+            Passenger *new_array = new Passenger[this->get_size()+1];
+            for (int i = 0; i < this->get_size(); i++) {
+                if (swap) {
+                    new_array[i+1] = this->passengers[i];
+                } else if (passenger->name < this->get(i)->name) {
+                    new_array[i] = *passenger;
+                    i--;
+                } {
+                    
+                    new_array[i] = this->passengers[i];
+                    
+                }
 
-        }
-
-        int get_size() {
-
+            }
+            if (this->get_size() == 0)
+                new_array[0] = *passenger;
+            
+            if (swap)
+                new_array[this->size] = this->passengers[this->get_size()];
+            this->size++;
+            this->passengers = new_array;
         }
 
 };
@@ -225,7 +369,7 @@ float read_float(string prompt) {
         system("cls");
         cout << prompt;
         cin >> buf;
-        n = stof(buf);
+        n = std::stof(buf);
 	}
     return n;
 }
@@ -249,41 +393,15 @@ char read_char(string prompt, string mask) {
     return read_char_cls(prompt, mask, true);
 }
 
-
 RouteList* generate_stations() {
     RouteList* titiwangsa = new RouteList(
         1,
         "Titiwangsa",
-        NULL,
+        -1.0,
         4.0,
-        NULL,
+        -1.0,
         0.4,
-        NULL,
-        3.0
-    );
-    RouteList* pwtc = new RouteList(
-        2,
-        "PWTC",
-        4.0,
-        8.0,
-        0.4,
-        0.8,
-        3.0,
-        7.0
-    );
-    titiwangsa->next = pwtc;
-    pwtc->prev = titiwangsa;
-}
-
-RouteList* generate_stations() {
-    RouteList* titiwangsa = new RouteList(
-        1,
-        "Titiwangsa",
-        NULL,
-        4.0,
-        NULL,
-        0.4,
-        NULL,
+        -1.0,
         3.0
     );
     RouteList* pwtc = new RouteList(
@@ -303,27 +421,31 @@ RouteList* generate_stations() {
 }
 
 TransactionQueue* generate_transactions() {
-    Transaction *transactions = new Transaction(
+    TransactionQueue *queue = new TransactionQueue();
+    Transaction *transaction = new Transaction(
         1,
         "test",
         "test",
         1.0,
-        time(0),
-        time(0),
+        "test",
+        "test",
         "test"
     );
-    TransactionQueue *queue = new TransactionQueue(transactions);
+    queue->add_transaction(transaction);
     return queue;
 }
 
-Passenger* generate_passengers() {
-    
-    Passenger *passengers = new Passenger(
-        1,
-        "test",
-        "test",
+PassengerArray* generate_passengers() {
+    PassengerArray *passengers = new PassengerArray();
+    Passenger *passenger = new Passenger(
+        "Customer",
+        "123456",
         generate_transactions()
     );
+    passengers->add_passenger(
+        passenger
+    );
+    return passengers;
 }
 
 int get_next_station_id(RouteList *stations) {
@@ -335,33 +457,65 @@ int get_next_station_id(RouteList *stations) {
     return id + 1;
 }
 
-void show_station(RouteList *station) {
-    cout << "Station id: " << station->id << endl;
+void show_station(RouteList *station, bool preview) {
     cout << "Station name: " << station->name << endl;
-    if (station->prev != NULL) {
-        cout << "Previous station name: " << station->prev->name << endl;
+    if (!preview)
+        if (station->prev != NULL) {
+            cout << "Previous station name: " << station->prev->name << endl;
+        } else {
+            cout << "No previous station!" << endl;
+        }
+    if (station->prev_distance  >= 0){
         cout << "Previous station distance: " << station->prev_distance << endl;
         cout << "Previous station time: " << station->prev_time << endl;
         cout << "Previous station price: " << station->prev_price << endl;
     }
-    if (station->next != NULL) {
-        cout << "Next station name: " << station->next->name << endl;
+    if (!preview)
+        if (station->next != NULL) {
+            cout << "Next station name: " << station->next->name << endl;
+        } else {
+            cout << "No next station!" << endl;
+        }
+    if (station->next_distance  >= 0){
         cout << "Next station distance: " << station->next_distance << endl;
         cout << "Next station time: " << station->next_time << endl;
         cout << "Next station price: " << station->next_price << endl;
     }
 }
 
+void show_station(RouteList *station) {
+    show_station(station, false);
+}
+
+void view_stations(RouteList *stations) {
+    while (stations != NULL){
+        show_station(stations);
+        stations = stations->next;
+    }
+}
+
+RouteList *search_station(RouteList *stations) {
+    string name;
+    cout << "Enter the station name: ";
+    cin >> name;
+    stations = stations->search_route(name, true);
+    if (stations == NULL) {
+        cout << "Could not find the station";
+        system("pause");
+    }
+    return stations;
+}
+
 RouteList* add_station(RouteList *stations) {
     bool add = true;
-    bool add_right;
+    bool add_right = true;
     string name;
-    float prev_distance;
-    float next_distance;
-    float prev_price;
-    float next_price;
-    float prev_time;
-    float next_time;
+    float prev_distance = -1;
+    float next_distance = -1;
+    float prev_price = -1;
+    float next_price = -1;
+    float prev_time = -1;
+    float next_time = -1;
     RouteList* prev;
     RouteList* next;
     cout << "Enter the station name:";
@@ -404,7 +558,7 @@ RouteList* add_station(RouteList *stations) {
         prev_time = read_float("Please enter the previous station's time:");
         prev_price = read_float("Please enter the previous station's price:");
     }
-    RouteList *new_station = new RouteList(
+    station = new RouteList(
         station ? station->id : get_next_station_id(stations),
         name,
         prev_distance,
@@ -414,17 +568,19 @@ RouteList* add_station(RouteList *stations) {
         prev_time,
         next_time
     );
-    show_station(station);
-    option = read_char(
+    show_station(station, true);
+    option = read_char_cls(
         "Do you want to add this station?\n(y/n): ",
-        "YyNn"
+        "YyNn",
+        false
     );
     if (tolower(option) == 'y') {
-        stations->add_station(new_station, add_right);
+        stations->add_station(station, add_right);
+        station->reassign_metrics();
         if (!add_right)
             stations = stations->prev;
     }
-    return stations;
+    return add_right ? stations : station;
 }
 
 void show_transaction(Transaction *transaction) {
@@ -432,7 +588,7 @@ void show_transaction(Transaction *transaction) {
     cout << "Transaction source station: " << transaction->source_station << endl;
     cout << "Transaction target station: " << transaction->target_station << endl;
     cout << "Transaction price: " << transaction->price << endl;
-    cout << "Transaction purchase datetime: " << transaction->purchase_date_time << endl;
+    cout << "Transaction purchase datetime: " << transaction->purchase_date_time;
     cout << "Transaction departure datetime: " << transaction->departure_date_time << endl;
 }
 
@@ -441,14 +597,17 @@ void view_transactions(TransactionQueue *transactions) {
     for (int i = transactions->get_size(); i > 0; i--) {
         transaction = transactions->pop();
         show_transaction(transaction);
-        transactions->push(transaction);
+        transactions->add_transaction(transaction);
     }
 }
 
-void view_transactions(Passenger *passengers) {
-    
+void view_transactions(PassengerArray *passengers) {
+    if (passengers->get_size() == 0) {
+        cout << "No transactions!" << endl;
+    }
+    cout << passengers->get_size();
     for (int i = 0; i < passengers->get_size(); i++) {
-        cout << "Passenger name: " << passengers->get(i)->name;
+        cout << "Passenger name: " << passengers->get(i)->name << endl;
         view_transactions(passengers->get(i)->transactions);
     }
 }
@@ -458,13 +617,13 @@ void edit_transaction(TransactionQueue *transactions) {
     string source_station;
     string target_station;
     float price;
-    time_t purchase_date_time;
-    time_t departure_date_time;
+    string purchase_date_time;
+    string departure_date_time;
     std::string passenger_name;
     id = read_float("Enter the transaction id: ");
     cout << "Enter the transaction source station: ";
     cin >> source_station;
-    cout << "Enter the transaction source station: ";
+    cout << "Enter the transaction arrival station: ";
     cin >> target_station;
     cout << "Enter the transaction price: ";
     cin >> price;
@@ -481,29 +640,8 @@ void edit_transaction(TransactionQueue *transactions) {
         departure_date_time,
         passenger_name
     );
-    transactions->edit_transaction(id, transaction);
-    // Transaction *transaction;
-    // bool found = false;
-    // for (int i = transactions->get_size(); i > 0; i--) {
-    //     transaction = transactions->pop();
-    //     if (transaction->id == id) {
-    //         found = true;
-    //         show_transaction(transaction);
-    //         if (tolower(read_char_cls("Found this transaction.\nDo you want to save the changes?\n(y/n): ", "YyNn", false)) == 'y') {
-    //             transaction->source_station = source_station;
-    //             transaction->target_station = target_station;
-    //             transaction->price = price;
-    //             transaction->purchase_date_time = purchase_date_time;
-    //             transaction->departure_date_time = departure_date_time;
-    //         }
-    //     }
-    //     transactions->push(transaction);
-    // }
-    // if (!found) {
-    //     cout << "Could not find any transation with this id" << endl;
-    //     system("pause");
-
-    // }
+    transactions->edit_transaction(transaction);
+    
 }
 
 void delete_transaction(TransactionQueue *transactions) {
@@ -513,28 +651,140 @@ void delete_transaction(TransactionQueue *transactions) {
     transactions->delete_transaction(id);
 }
 
-Passenger *search_passenger(Passenger *passengers) {
+Passenger *search_passenger(PassengerArray *passengers) {
     string name;
-    cout << "Enter the passenger name";
+    cout << "Enter the passenger name: ";
     cin >> name;
     return passengers->search_passenger(name);
 
 }
 
-void passenger_menu(RouteList *stations, Passenger *passengers) {
-    exit(0);
+string get_current_time() {
+    time_t _tm = time(NULL );
+    struct tm * curtime = localtime ( &_tm );
+    return asctime(curtime);
 }
 
-void admin_menu(RouteList *stations, Passenger *passengers) {
+void buy_ticket(RouteList *stations, Passenger *passenger) {
+    view_stations(stations);
+    string start_station_name, end_station_name;
+    cout << "Enter your initial station: ";
+    cin >> start_station_name;
+    cout << "Enter your final station: ";
+    cin >> end_station_name;
+    string departure_time;
+    cout << "Enter the departure time: ";
+    cin >> departure_time;
+    float *path_metrics = stations->calculate_path(start_station_name, end_station_name);
+    Transaction *transaction = new Transaction(
+        passenger->transactions->get_next_id(),
+        start_station_name,
+        end_station_name,
+        path_metrics[2],
+        get_current_time(),
+        departure_time,
+        passenger->name
+    );
+    system("cls");
+    show_transaction(transaction);
+    char option = read_char_cls(
+        "This will be your ticket. Do you want to purchase it?\n(y/n): ",
+        "YyNn",
+        false
+    );
+    if (tolower(option) == 'y')
+        passenger->transactions->add_transaction(transaction);
+}
+
+void view_path(RouteList *stations) {
+    view_stations(stations);
+    string start_station_name, end_station_name;
+    cout << "Enter your initial station: ";
+    cin >> start_station_name;
+    cout << "Enter your final station: ";
+    cin >> end_station_name;
+    bool move_right = stations->search_route_position(start_station_name) < stations->search_route_position(end_station_name);
+    RouteList *node = stations->search_route(start_station_name, true);
+    system("cls");
+    float *path_metrics = stations->calculate_path(start_station_name, end_station_name);
+    while (node->iterate_ll(move_right)) {
+        cout << node->name << endl;
+        node = move_right ? node->next : node->prev;
+        if (node->name == end_station_name) {
+            cout << node->name << endl;
+            cout << "Total distance: " << path_metrics[0] << endl;
+            cout << "Total time: " << path_metrics[1] << endl;
+            cout << "Total price: " << path_metrics[2] << endl;
+            system("pause");
+            break;
+        }
+    }
+}
+
+PassengerArray *passenger_menu(RouteList *stations, PassengerArray *passengers) {
+    string name;
+    cout << "Enter your name: ";
+    cin >> name;
+    Passenger* passenger = passengers->search_passenger(name);
+    if (passenger == NULL) {
+        string ic;
+        cout << "You are a new user, please enter your identity card number for the registration: ";
+        cin >> ic;
+        passenger;
+        passengers->add_passenger(passenger);
+    }
+    for(;;) {
+        //system("cls");
+        int option;
+        cout << "Welcome, " << passenger->name << "!" << endl;
+        cout << "1. Buy ticket" << endl;
+        cout << "2. View path between two stations" << endl;
+        cout << "3. View station details" << endl;
+        cout << "4. View transaction history" << endl;
+        cout << "5. Delete transaction" << endl;
+        cout << "6. Back" << endl;
+        cout << "Select your option: ";
+        cin >> option;
+        system("cls");
+        switch(option) {
+            case 1:
+                buy_ticket(stations, passenger);
+                system("cls");
+                break;
+            case 2:
+                view_path(stations);
+                break;
+            case 3:
+                show_station(search_station(stations));
+                system("pause");
+                break;
+            case 4:
+                view_transactions(passengers->search_passenger(name)->transactions);
+                system("pause");
+                break;
+            case 5:
+                delete_transaction(passengers->search_passenger(name)->transactions);
+                break;
+            case 6:
+                return passengers;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+RouteList *admin_menu(RouteList *stations, PassengerArray *passengers) {
     int option;
     for(;;) {
+        system("cls");
         int option;
         cout << "1. Add/edit station" << endl;
         cout << "2. View all transactions" << endl;
         cout << "3. View customer purchase information" << endl;
         cout << "4. Edit customer purchase information" << endl;
         cout << "5. Delete customer purchase information" << endl;
-        cout << "6. Exit" << endl;
+        cout << "6. Back" << endl;
         cout << "Select your option: ";
         cin >> option;
         system("cls");
@@ -544,9 +794,11 @@ void admin_menu(RouteList *stations, Passenger *passengers) {
                 break;
             case 2:
                 view_transactions(passengers);
+                system("pause");
                 break;
             case 3:
                 view_transactions(search_passenger(passengers)->transactions);
+                system("pause");
                 break;
             case 4:
                 edit_transaction(search_passenger(passengers)->transactions);
@@ -555,7 +807,7 @@ void admin_menu(RouteList *stations, Passenger *passengers) {
                 delete_transaction(search_passenger(passengers)->transactions);
                 break;
             case 6:
-                exit(0);
+                return stations;
                 break;
             default:
                 break;
@@ -567,8 +819,10 @@ void admin_menu(RouteList *stations, Passenger *passengers) {
 
 int main() {
     RouteList *stations = generate_stations();
-    Passenger *passengers = generate_passengers();
+    PassengerArray *passengers = generate_passengers();
     for(;;) {
+        system("cls");
+        generate_passengers();
         int option;
         cout << "1. Admin" << endl;
         cout << "2. Passenger" << endl;
@@ -579,10 +833,10 @@ int main() {
         switch (option)
         {
         case 1:
-            admin_menu(stations, passengers);
+            stations = admin_menu(stations, passengers);
             break;
         case 2:
-            passenger_menu(stations, passengers);
+            passengers = passenger_menu(stations, passengers);
             break;
         case 3:
             exit(0);
