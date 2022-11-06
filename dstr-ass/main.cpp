@@ -498,14 +498,34 @@ TransactionQueue* generate_transactions() {
     TransactionQueue *queue = new TransactionQueue();
     Transaction *transaction = new Transaction(
         1,
-        "test",
-        "test",
+        "Titiwangsa",
+        "PWTC",
         1.0,
-        "test",
-        "test",
-        "test"
+        "2:00",
+        "2:15",
+        "Customer"
+    );
+    Transaction *transaction2 = new Transaction(
+        2,
+        "Titiwangsa",
+        "Majlis Jamek",
+        2.0,
+        "2:00",
+        "2:15",
+        "Customer"
+    );
+    Transaction *transaction3 = new Transaction(
+        3,
+        "Sultan Ismail",
+        "Pudu",
+        2.9,
+        "8:00",
+        "8:24",
+        "Customer"
     );
     queue->add_transaction(transaction);
+    queue->add_transaction(transaction2);
+    queue->add_transaction(transaction3);
     return queue;
 }
 
@@ -663,7 +683,7 @@ void show_transaction(Transaction *transaction) {
     cout << "Transaction target station: " << transaction->target_station << endl;
     cout << "Transaction price: " << transaction->price << endl;
     cout << "Transaction purchase datetime: " << transaction->purchase_date_time;
-    cout << "Transaction departure datetime: " << transaction->departure_date_time << endl;
+    cout << "\nTransaction departure datetime: " << transaction->departure_date_time <<"\n"<<endl;
 }
 
 void view_transactions(TransactionQueue *transactions) {
