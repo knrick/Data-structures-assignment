@@ -414,8 +414,82 @@ RouteList* generate_stations() {
         3.0,
         7.0
     );
+    RouteList* sultan_ismail = new RouteList(
+        3,
+        "Sultan Ismail",
+        8.0,
+        8.0,
+        0.8,
+        0.8,
+        7.0,
+        7.0
+    );
+    RouteList* majlis_jamek = new RouteList(
+        4,
+        "Majlis Jamek",
+        8.0,
+        6.0,
+        0.8,
+        0.6,
+        7.0,
+        5.0
+    );
+    RouteList* plaza_rakyat = new RouteList(
+        5,
+        "Plaza Rakyat",
+        6.0,
+        10.0,
+        0.6,
+        1.0,
+        5.0,
+        9.0
+    );
+    RouteList* hang_tuah = new RouteList(
+        6,
+        "Hang Tuah",
+        10.0,
+        5.0,
+        1.0,
+        0.5,
+        9.0,
+        4.0
+    );
+    RouteList* pudu = new RouteList(
+        7,
+        "Pudu",
+        5.0,
+        5.0,
+        0.5,
+        0.5,
+        4.0,
+        4.0
+    );
+    RouteList* chan_sow_lin = new RouteList(
+        8,
+        "Chan Sow Lin",
+        5.0,
+        -1.0,
+        0.5,
+        -1.0,
+        4.0,
+        -1.0
+    );
+
     titiwangsa->next = pwtc;
+    pwtc->next = sultan_ismail;
+    sultan_ismail->next = majlis_jamek;
+    majlis_jamek->next = plaza_rakyat;
+    plaza_rakyat->next = hang_tuah;
+    hang_tuah->next = pudu;
+    pudu->next = chan_sow_lin;
+
     pwtc->prev = titiwangsa;
+    sultan_ismail->prev = pwtc;
+    majlis_jamek->prev = sultan_ismail;
+    plaza_rakyat->prev = majlis_jamek;
+    hang_tuah->prev = plaza_rakyat;
+    pudu->prev = hang_tuah;
+    chan_sow_lin->prev = pudu;
     
     return titiwangsa;
 }
