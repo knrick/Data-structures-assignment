@@ -381,6 +381,7 @@ char read_char_cls(string prompt, string mask, bool cls) {
     do {
         if (cls)
             system("cls");
+        fflush(stdout);
         cout << prompt;
         cin >> buf;
     } while (mask.find(buf) == string::npos);
@@ -828,7 +829,7 @@ PassengerArray *passenger_menu(RouteList *stations, PassengerArray *passengers) 
         passengers->add_passenger(passenger);
     }
     for(;;) {
-        //system("cls");
+        system("cls");
         int option;
         cout << "Welcome, " << passenger->name << "!" << endl;
         cout << "1. Buy ticket" << endl;
@@ -843,7 +844,6 @@ PassengerArray *passenger_menu(RouteList *stations, PassengerArray *passengers) 
         switch(option) {
             case 1:
                 buy_ticket(stations, passenger);
-                system("cls");
                 break;
             case 2:
                 view_path(stations);
