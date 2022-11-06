@@ -574,7 +574,7 @@ void show_station(RouteList *station, bool preview) {
     if (station->next_distance  >= 0){
         cout << "Next station distance: " << station->next_distance << endl;
         cout << "Next station time: " << station->next_time << endl;
-        cout << "Next station price: " << station->next_price << endl;
+        cout << "Next station price: " << station->next_price << "\n" << endl;
     }
 }
 
