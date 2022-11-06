@@ -591,7 +591,7 @@ void view_stations(RouteList *stations) {
 
 RouteList *search_station(RouteList *stations) {
     string name;
-    cout << "Enter the station name: ";
+    cout << "Enter a station name for details: ";
     cin >> name;
     stations = stations->search_route(name, true);
     if (stations == NULL) {
@@ -741,7 +741,7 @@ void edit_transaction(TransactionQueue *transactions) {
 
 void delete_transaction(TransactionQueue *transactions) {
     view_transactions(transactions);
-    int id = read_float("Enter the transaction id: ");
+    int id = read_float("Enter the transaction id you wish to delete: ");
     Transaction *transaction;
     transactions->delete_transaction(id);
 }
